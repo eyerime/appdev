@@ -24,3 +24,13 @@ export const navigate = (to: string) => {
 }
 
 export const segments = (path: string) => path.split('?')[0].split('/').filter(Boolean)
+
+export const query = (path: string) => new URLSearchParams(path.split('?')[1] ?? '')
+
+/** Replaces the current history entry so the Back button doesn't bounce into a redirect loop. */
+export function Redirect({ to }: { to: string }) {
+  useEffect(() => {
+    window.location.replace(`#${to}`)
+  }, [to])
+  return null
+}

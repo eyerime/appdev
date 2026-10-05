@@ -1,13 +1,14 @@
+import type { User } from './auth'
 import { Button, Icon, Logo, Badge, Upvote, icons } from './ui'
 
 const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
 
-export default function Landing({ go }: { go: (s: string) => void }) {
+export default function Landing({ go, user }: { go: (s: string) => void; user: User | null }) {
   const feats: [keyof typeof icons, string, string][] = [
     ['lock', 'Anonymous asking', 'No names attached. Ever. Not even for your teacher.'],
     ['up', 'Upvoting', 'The whole class signals what they also want answered.'],
     ['bolt', 'Live queue', 'Questions re-rank in real time as votes come in.'],
-    ['link', 'Shareable link', 'One link or QR code. No accounts for students.'],
+    ['link', 'Shareable link', 'One link or QR code. Students sign in and join in seconds.'],
   ]
   const steps = [
     ['Create a room', 'Name your topic and set a few options. Takes under a minute.'],
@@ -22,7 +23,14 @@ export default function Landing({ go }: { go: (s: string) => void }) {
           <button onClick={() => scrollTo('how')} className="cursor-pointer hover:text-fg">How it works</button>
           <button onClick={() => scrollTo('features')} className="cursor-pointer hover:text-fg">Features</button>
         </nav>
-        <Button v="ghost" size="sm" onClick={() => go('/teacher')}>Teacher log in</Button>
+        {user ? (
+          <Button size="sm" onClick={() => go(`/${user.role}`)}>{user.role === 'teacher' ? 'Open dashboard' : 'Join a room'}</Button>
+        ) : (
+          <div className="flex gap-1">
+            <Button v="ghost" size="sm" onClick={() => go('/login/student')}>Student log in</Button>
+            <Button v="secondary" size="sm" onClick={() => go('/login/teacher')}>Teacher log in</Button>
+          </div>
+        )}
       </header>
 
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-10 lg:grid-cols-[1.1fr_1fr] lg:pt-20">

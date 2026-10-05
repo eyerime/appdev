@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { makeCode, type Room } from './rooms'
 import { Badge, Button, Field, Icon, Illustration, Logo, Modal, QR, QSkeleton, QuestionCard, Skeleton, Toggle, inputCls, seedQuestions, type Q } from './ui'
 
-export function TeacherShell({ children, active, go, toggle }: { children: ReactNode; active: string; go: (s: string) => void; toggle?: ReactNode }) {
+export function TeacherShell({ children, active, go, name, onLogout, toggle }: { children: ReactNode; active: string; go: (s: string) => void; name: string; onLogout: () => void; toggle?: ReactNode }) {
+  const initials = name.split(/\W+/).filter(Boolean).map((w) => w[0]).join('').slice(0, 2).toUpperCase()
   const nav: [string, string, 'list' | 'plus' | 'user'][] = [['/teacher', 'Rooms', 'list'], ['/teacher/create', 'Create Room', 'plus'], ['/teacher/profile', 'Profile', 'user']]
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
@@ -16,9 +17,12 @@ export function TeacherShell({ children, active, go, toggle }: { children: React
             </button>
           ))}
         </nav>
-        <div className="mt-auto flex items-center gap-3 rounded-2xl bg-surface2 p-3">
-          <span className="grid size-10 place-items-center rounded-full bg-primary font-semibold text-primary-fg">MR</span>
-          <div className="text-sm"><p className="font-semibold">Ms. Rivera</p><p className="text-muted">Teacher</p></div>
+        <div className="mt-auto space-y-2">
+          <div className="flex items-center gap-3 rounded-2xl bg-surface2 p-3">
+            <span className="grid size-10 place-items-center rounded-full bg-primary font-semibold text-primary-fg">{initials}</span>
+            <div className="text-sm"><p className="font-semibold">{name}</p><p className="text-muted">Teacher</p></div>
+          </div>
+          <button onClick={onLogout} className="flex min-h-12 w-full cursor-pointer items-center gap-3 rounded-xl px-4 text-[15px] font-medium text-muted transition hover:bg-surface2 hover:text-fg"><Icon n="logout" />Log out</button>
         </div>
       </aside>
       <div className="min-w-0">
@@ -28,6 +32,7 @@ export function TeacherShell({ children, active, go, toggle }: { children: React
             {nav.map(([k, l, ic]) => (
               <button key={k} aria-label={l} onClick={() => go(k)} className={`grid size-11 cursor-pointer place-items-center rounded-xl ${active === k ? 'bg-primary-soft text-primary' : 'text-muted'}`}><Icon n={ic} /></button>
             ))}
+            <button aria-label="Log out" onClick={onLogout} className="grid size-11 cursor-pointer place-items-center rounded-xl text-muted"><Icon n="logout" /></button>
           </div>
         </div>
         <main className="mx-auto max-w-5xl p-5 sm:p-8">{children}</main>
@@ -37,12 +42,12 @@ export function TeacherShell({ children, active, go, toggle }: { children: React
   )
 }
 
-export function Dashboard({ go, rooms, empty, loading }: { go: (s: string) => void; rooms: Room[]; empty?: boolean; loading?: boolean }) {
+export function Dashboard({ go, rooms, name, empty, loading }: { go: (s: string) => void; rooms: Room[]; name: string; empty?: boolean; loading?: boolean }) {
   const isEmpty = empty || rooms.length === 0
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-        <div><h1 className="text-3xl font-semibold">Your rooms</h1><p className="mt-1 text-muted">Welcome back, Ms. Rivera.</p></div>
+        <div><h1 className="text-3xl font-semibold">Your rooms</h1><p className="mt-1 text-muted">Welcome back, {name}.</p></div>
         <Button onClick={() => go('/teacher/create')}><Icon n="plus" />New room</Button>
       </div>
       {loading ? (
@@ -263,12 +268,12 @@ export function Summary({ notify, room, go }: { notify: (m: string) => void; roo
   )
 }
 
-export function Profile() {
+export function Profile({ name }: { name: string }) {
   return (
     <div className="max-w-md">
       <h1 className="mb-6 text-3xl font-semibold">Profile</h1>
       <div className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-soft">
-        <Field label="Display name"><input className={inputCls} defaultValue="Ms. Rivera" /></Field>
+        <Field label="Display name"><input className={inputCls} defaultValue={name} /></Field>
         <Field label="Email"><input className={inputCls} defaultValue="rivera@northfield.edu" /></Field>
         <Button>Save changes</Button>
       </div>

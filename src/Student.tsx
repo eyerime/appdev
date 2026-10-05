@@ -2,14 +2,14 @@ import { useState } from 'react'
 import type { Room } from './rooms'
 import { Badge, Button, Field, Icon, Logo, QSkeleton, QuestionCard, Skeleton, Toggle, inputCls, seedQuestions, type Q } from './ui'
 
-export function StudentBar({ go, onLeave }: { go: (s: string) => void; onLeave?: () => void }) {
+export function StudentBar({ go, onLeave, onLogout }: { go: (s: string) => void; onLeave?: () => void; onLogout?: () => void }) {
   return (
     <header className="border-b border-line bg-surface">
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
         <button onClick={() => go('/')} className="cursor-pointer"><Logo /></button>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1.5 text-xs font-semibold text-primary"><Icon n="lock" className="size-3.5" />You are anonymous</span>
-          {onLeave && <Button v="ghost" size="sm" onClick={onLeave}>Leave room</Button>}
+          {onLeave ? <Button v="ghost" size="sm" onClick={onLeave}>Leave room</Button> : onLogout && <Button v="ghost" size="sm" onClick={onLogout}><Icon n="logout" className="size-4" />Log out</Button>}
         </div>
       </div>
     </header>

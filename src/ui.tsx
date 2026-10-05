@@ -48,6 +48,7 @@ export const icons = {
   pdf: 'M14 3H6v18h12V7zM14 3v4h4',
   alert: 'M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 001.7 3h16.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z',
   flag: 'M5 21V4M5 4h12l-2 4 2 4H5',
+  logout: 'M9 21H5V3h4M16 17l5-5-5-5M21 12H9',
 }
 export const Icon = ({ n, className }: { n: keyof typeof icons; className?: string }) => I(icons[n], className)
 

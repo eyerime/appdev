@@ -5,7 +5,7 @@ const pages: Record<string, { title: string; body: string[] }> = {
     title: 'Privacy',
     body: [
       'SpeakUp is built so students can ask questions without being singled out. Questions are never linked to a name, and teachers only see the question text and its votes.',
-      'This demo does not store anything on a server. Everything you type stays in your browser and disappears when you refresh the page.',
+      'This demo has no server or database. Your questions stay in your browser, and the only things saved locally are your sign-in session and your theme preference.',
     ],
   },
   terms: {
