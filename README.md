@@ -7,9 +7,9 @@ Built with React 19, Vite and Tailwind CSS v4. There is no backend yet, so all d
 ## Getting started
 
 ```bash
-pnpm install   # or npm install
-pnpm dev       # http://localhost:8443
-pnpm build
+npm install
+npm run dev   # http://localhost:5173
+npm run build
 ```
 
 ## Demo accounts
