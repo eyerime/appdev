@@ -16,6 +16,7 @@ export default function System({ go }: { go: (s: string) => void }) {
   const q = seedQuestions
   return (
     <div className="mx-auto max-w-4xl p-5 sm:p-8">
+      <button onClick={() => go('/')} className="mb-4 cursor-pointer text-sm font-semibold text-primary hover:underline">← Back to SpeakUp</button>
       <h1 className="text-3xl font-semibold">Component library</h1>
       <p className="mb-10 mt-1 text-muted">Buttons, cards, badges, inputs, navigation and states.</p>
 
@@ -79,11 +80,11 @@ export default function System({ go }: { go: (s: string) => void }) {
       <S t="Loading, empty and error states">
         <div className="space-y-4"><QSkeleton />
           <div className="flex flex-wrap gap-3">
-            <Button v="secondary" onClick={() => go('dashboardEmpty')}>Empty dashboard</Button>
-            <Button v="secondary" onClick={() => go('roomLoading')}>Teacher loading</Button>
-            <Button v="secondary" onClick={() => go('studentLoading')}>Student loading</Button>
-            <Button v="secondary" onClick={() => go('studentEmpty')}>Student empty</Button>
-            <Button v="danger" onClick={() => go('joinError')}>Invalid room link</Button>
+            <Button v="secondary" onClick={() => go('/components/dashboard-empty')}>Empty dashboard</Button>
+            <Button v="secondary" onClick={() => go('/components/teacher-loading')}>Teacher loading</Button>
+            <Button v="secondary" onClick={() => go('/components/student-loading')}>Student loading</Button>
+            <Button v="secondary" onClick={() => go('/components/student-empty')}>Student empty</Button>
+            <Button v="danger" onClick={() => go('/components/join-error')}>Invalid room link</Button>
           </div>
         </div>
       </S>

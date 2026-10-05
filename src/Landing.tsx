@@ -1,5 +1,7 @@
 import { Button, Icon, Logo, Badge, Upvote, icons } from './ui'
 
+const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+
 export default function Landing({ go }: { go: (s: string) => void }) {
   const feats: [keyof typeof icons, string, string][] = [
     ['lock', 'Anonymous asking', 'No names attached. Ever. Not even for your teacher.'],
@@ -17,10 +19,10 @@ export default function Landing({ go }: { go: (s: string) => void }) {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
         <Logo />
         <nav className="hidden items-center gap-8 text-sm font-medium text-muted sm:flex">
-          <a href="#how" className="hover:text-fg">How it works</a>
-          <a href="#features" className="hover:text-fg">Features</a>
+          <button onClick={() => scrollTo('how')} className="cursor-pointer hover:text-fg">How it works</button>
+          <button onClick={() => scrollTo('features')} className="cursor-pointer hover:text-fg">Features</button>
         </nav>
-        <Button v="ghost" size="sm" onClick={() => go('dashboard')}>Teacher log in</Button>
+        <Button v="ghost" size="sm" onClick={() => go('/teacher')}>Teacher log in</Button>
       </header>
 
       <section className="mx-auto grid max-w-6xl items-center gap-12 px-5 pb-20 pt-10 lg:grid-cols-[1.1fr_1fr] lg:pt-20">
@@ -35,8 +37,8 @@ export default function Landing({ go }: { go: (s: string) => void }) {
             SpeakUp gives every student a safe way to ask the question they are afraid to raise a hand for, and gives teachers a live queue of what the class most needs answered.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
-            <Button size="lg" onClick={() => go('create')}><Icon n="plus" />Create a Room</Button>
-            <Button size="lg" v="secondary" onClick={() => go('join')}>Join a Room</Button>
+            <Button size="lg" onClick={() => go('/teacher/create')}><Icon n="plus" />Create a Room</Button>
+            <Button size="lg" v="secondary" onClick={() => go('/student')}>Join a Room</Button>
           </div>
         </div>
         <div className="relative">
@@ -91,7 +93,7 @@ export default function Landing({ go }: { go: (s: string) => void }) {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-5 py-8 text-sm text-muted">
           <Logo />
           <p>Questions are never linked to a name. © 2026 SpeakUp</p>
-          <div className="flex gap-6"><a href="#" className="hover:text-fg">Privacy</a><a href="#" className="hover:text-fg">Terms</a><a href="#" className="hover:text-fg">Contact</a></div>
+          <div className="flex gap-6"><a href="#/privacy" className="hover:text-fg">Privacy</a><a href="#/terms" className="hover:text-fg">Terms</a><a href="#/contact" className="hover:text-fg">Contact</a><a href="#/components" className="hover:text-fg">Components</a></div>
         </div>
       </footer>
     </div>

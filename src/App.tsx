@@ -1,59 +1,97 @@
 import { useState } from 'react'
 import Landing from './Landing'
-import { CreateRoom, Dashboard, Profile, Summary, TeacherRoom, TeacherShell } from './Teacher'
+import Info, { infoPages } from './Info'
+import NotFound from './NotFound'
+import { CreateRoom, Dashboard, Profile, Summary, TeacherRoom, TeacherShell, useDelay } from './Teacher'
 import { Join, StudentBar, StudentRoom } from './Student'
 import System from './System'
 import { Icon, useToast } from './ui'
+import { makeCode, seedRooms, type Room } from './rooms'
+import { navigate, segments, usePath } from './router'
 
-const screens: [string, string][] = [
-  ['landing', 'Landing'], ['dashboard', 'Dashboard'], ['create', 'Create'], ['room', 'Teacher room'],
-  ['join', 'Join'], ['student', 'Student room'], ['summary', 'Summary'], ['system', 'Components'],
-]
+const THEME_KEY = 'speakup-theme'
+
+function useTheme() {
+  const [dark, setDark] = useState(() => {
+    try { return localStorage.getItem(THEME_KEY) === 'dark' } catch { return false }
+  })
+  const toggle = () => {
+    setDark(!dark)
+    try { localStorage.setItem(THEME_KEY, !dark ? 'dark' : 'light') } catch { /* ignore */ }
+  }
+  return { dark, toggle }
+}
 
 export default function App() {
-  const [screen, setScreen] = useState('landing')
-  const [dark, setDark] = useState(false)
+  const path = usePath()
+  const { dark, toggle } = useTheme()
   const { show, node } = useToast()
+  const [rooms, setRooms] = useState<Room[]>(seedRooms)
+  const go = navigate
 
-  const go = (s: string) => { setScreen(s); window.scrollTo(0, 0) }
+  const addRoom = (d: { title: string; topic: string; when: string }) => {
+    const room: Room = {
+      id: Date.now(), code: makeCode(rooms.map((r) => r.code)), title: d.title, topic: d.topic,
+      date: d.when, n: 0, students: 0, live: true,
+    }
+    setRooms((a) => [room, ...a])
+    return room
+  }
+  const endRoom = (id: number) => setRooms((a) => a.map((r) => (r.id === id ? { ...r, live: false } : r)))
+
+  const [a, b, c] = segments(path)
+  const roomById = rooms.find((r) => String(r.id) === c)
+  const roomByCode = rooms.find((r) => r.code === c?.toUpperCase())
   const teacher = (active: string, el: React.ReactNode) => <TeacherShell active={active} go={go}>{el}</TeacherShell>
 
   let view: React.ReactNode
-  switch (screen) {
-    case 'landing': view = <Landing go={go} />; break
-    case 'dashboard': view = teacher('dashboard', <Dashboard go={go} />); break
-    case 'dashboardEmpty': view = teacher('dashboard', <Dashboard go={go} empty />); break
-    case 'create':
-      view = teacher('create', <><Dashboard go={go} /><CreateRoom onClose={() => go('dashboard')} notify={show} /></>); break
-    case 'room': view = teacher('dashboard', <TeacherRoom go={go} notify={show} />); break
-    case 'roomLoading': view = teacher('dashboard', <TeacherRoom go={go} notify={show} loading />); break
-    case 'summary': view = teacher('dashboard', <Summary notify={show} />); break
-    case 'profile': view = teacher('profile', <Profile />); break
-    case 'join': view = <><StudentBar go={go} /><Join go={go} /></>; break
-    case 'joinError': view = <><StudentBar go={go} /><Join go={go} state="error" /></>; break
-    case 'student': view = <><StudentBar go={go} /><StudentRoom notify={show} /></>; break
-    case 'studentLoading': view = <><StudentBar go={go} /><StudentRoom notify={show} loading /></>; break
-    case 'studentEmpty': view = <><StudentBar go={go} /><StudentRoom notify={show} empty /></>; break
-    default: view = <System go={go} />
-  }
+  if (!a) view = <Landing go={go} />
+  else if (infoPages.includes(a) && !b) view = <Info page={a} go={go} />
+  else if (a === 'teacher') {
+    if (!b) view = teacher('/teacher', <Dashboard go={go} rooms={rooms} />)
+    else if (b === 'create')
+      view = teacher('/teacher/create', <><Dashboard go={go} rooms={rooms} /><CreateRoom onClose={() => go('/teacher')} notify={show} onCreate={addRoom} go={go} /></>)
+    else if (b === 'profile') view = teacher('/teacher/profile', <Profile />)
+    else if (b === 'room' && roomById)
+      view = teacher('/teacher', <TeacherRoomPage key={roomById.id} room={roomById} go={go} notify={show} onEnd={() => endRoom(roomById.id)} />)
+    else if (b === 'summary' && roomById) view = teacher('/teacher', <Summary room={roomById} go={go} notify={show} />)
+    else view = <NotFound go={go} />
+  } else if (a === 'student') {
+    if (!b) view = <><StudentBar go={go} /><Join go={go} rooms={rooms} /></>
+    else if (b === 'room' && roomByCode?.live)
+      view = <><StudentBar go={go} onLeave={() => go('/student')} /><StudentRoomPage key={roomByCode.id} room={roomByCode} notify={show} /></>
+    else view = <><StudentBar go={go} /><Join go={go} rooms={rooms} state="error" /></>
+  } else if (a === 'components') {
+    const demo = seedRooms[0]
+    switch (b) {
+      case undefined: view = <System go={go} />; break
+      case 'dashboard-empty': view = teacher('/teacher', <Dashboard go={go} rooms={rooms} empty />); break
+      case 'teacher-loading': view = teacher('/teacher', <TeacherRoom go={go} notify={show} room={demo} onEnd={() => {}} loading />); break
+      case 'student-loading': view = <><StudentBar go={go} /><StudentRoom notify={show} room={demo} loading /></>; break
+      case 'student-empty': view = <><StudentBar go={go} /><StudentRoom notify={show} room={demo} empty /></>; break
+      case 'join-error': view = <><StudentBar go={go} /><Join go={go} rooms={rooms} state="error" /></>; break
+      default: view = <NotFound go={go} />
+    }
+  } else view = <NotFound go={go} />
 
   return (
     <div className={dark ? 'dark' : ''}>
-      <div className="min-h-screen bg-bg pb-20 text-fg">
+      <div className="min-h-screen bg-bg text-fg">
         {view}
         {node}
-        <nav aria-label="Screens" className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-2 pb-2">
-          <div className="flex max-w-full items-center gap-1 overflow-x-auto rounded-2xl border border-line bg-surface/95 p-1.5 shadow-soft backdrop-blur">
-            {screens.map(([k, l]) => (
-              <button key={k} onClick={() => go(k)} aria-current={screen === k}
-                className={`min-h-10 shrink-0 cursor-pointer whitespace-nowrap rounded-xl px-3 text-sm font-medium transition ${screen === k ? 'bg-primary text-primary-fg' : 'text-muted hover:bg-surface2 hover:text-fg'}`}>{l}</button>
-            ))}
-            <button aria-label="Toggle dark mode" onClick={() => setDark(!dark)} className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-xl text-fg hover:bg-surface2">
-              <Icon n={dark ? 'sun' : 'moon'} />
-            </button>
-          </div>
-        </nav>
+        <button aria-label="Toggle dark mode" onClick={toggle}
+          className="fixed bottom-4 right-4 z-30 grid size-12 cursor-pointer place-items-center rounded-full border border-line bg-surface text-fg shadow-soft transition hover:bg-surface2">
+          <Icon n={dark ? 'sun' : 'moon'} />
+        </button>
       </div>
     </div>
   )
+}
+
+/** Simulates a short network load so the skeleton states are reachable in normal use. */
+function TeacherRoomPage(p: React.ComponentProps<typeof TeacherRoom>) {
+  return <TeacherRoom {...p} loading={useDelay(600)} />
+}
+function StudentRoomPage(p: React.ComponentProps<typeof StudentRoom>) {
+  return <StudentRoom {...p} loading={useDelay(600)} />
 }

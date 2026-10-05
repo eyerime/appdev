@@ -1,18 +1,13 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { makeCode, type Room } from './rooms'
 import { Badge, Button, Field, Icon, Illustration, Logo, Modal, QR, QSkeleton, QuestionCard, Skeleton, Toggle, inputCls, seedQuestions, type Q } from './ui'
 
-const rooms = [
-  { id: 1, title: 'Calculus 101 · Derivatives', topic: 'Chain rule, implicit differentiation', date: 'Today, 10:00', n: 38, live: true },
-  { id: 2, title: 'World History · Industrial Revolution', topic: 'Causes and social impact', date: 'Sep 26, 13:30', n: 52, live: false },
-  { id: 3, title: 'Intro to Biology · Cell Division', topic: 'Mitosis vs. meiosis', date: 'Sep 24, 09:00', n: 27, live: false },
-]
-
 export function TeacherShell({ children, active, go, toggle }: { children: ReactNode; active: string; go: (s: string) => void; toggle?: ReactNode }) {
-  const nav: [string, string, 'list' | 'plus' | 'user'][] = [['dashboard', 'Rooms', 'list'], ['create', 'Create Room', 'plus'], ['profile', 'Profile', 'user']]
+  const nav: [string, string, 'list' | 'plus' | 'user'][] = [['/teacher', 'Rooms', 'list'], ['/teacher/create', 'Create Room', 'plus'], ['/teacher/profile', 'Profile', 'user']]
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="hidden flex-col border-r border-line bg-surface p-5 lg:flex">
-        <button onClick={() => go('landing')} className="mb-8 cursor-pointer text-left"><Logo /></button>
+        <button onClick={() => go('/')} className="mb-8 cursor-pointer text-left"><Logo /></button>
         <nav className="space-y-1">
           {nav.map(([k, l, ic]) => (
             <button key={k} onClick={() => go(k)} aria-current={active === k}
@@ -42,26 +37,27 @@ export function TeacherShell({ children, active, go, toggle }: { children: React
   )
 }
 
-export function Dashboard({ go, empty, loading }: { go: (s: string) => void; empty?: boolean; loading?: boolean }) {
+export function Dashboard({ go, rooms, empty, loading }: { go: (s: string) => void; rooms: Room[]; empty?: boolean; loading?: boolean }) {
+  const isEmpty = empty || rooms.length === 0
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div><h1 className="text-3xl font-semibold">Your rooms</h1><p className="mt-1 text-muted">Welcome back, Ms. Rivera.</p></div>
-        <Button onClick={() => go('create')}><Icon n="plus" />New room</Button>
+        <Button onClick={() => go('/teacher/create')}><Icon n="plus" />New room</Button>
       </div>
       {loading ? (
         <div className="grid gap-4 md:grid-cols-2">{[0, 1, 2, 3].map((i) => <div key={i} className="space-y-4 rounded-2xl border border-line bg-surface p-6"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /><Skeleton className="h-8 w-1/3" /></div>)}</div>
-      ) : empty ? (
+      ) : isEmpty ? (
         <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-line bg-surface px-6 py-16 text-center">
           <Illustration />
           <h2 className="mt-6 text-2xl font-semibold">No rooms yet</h2>
           <p className="mt-2 max-w-sm text-muted">Create a room, share the link, and your class can start asking without fear.</p>
-          <Button className="mt-6" size="lg" onClick={() => go('create')}>Create your first room</Button>
+          <Button className="mt-6" size="lg" onClick={() => go('/teacher/create')}>Create your first room</Button>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {rooms.map((r) => (
-            <button key={r.id} onClick={() => go('room')} className="group cursor-pointer rounded-2xl border border-line bg-surface p-6 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-primary">
+            <button key={r.id} onClick={() => go(`/teacher/room/${r.id}`)} className="group cursor-pointer rounded-2xl border border-line bg-surface p-6 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-primary">
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-lg font-semibold leading-snug">{r.title}</h3>
                 <Badge k={r.live ? 'live' : 'ended'} />
@@ -79,26 +75,46 @@ export function Dashboard({ go, empty, loading }: { go: (s: string) => void; emp
   )
 }
 
-export function CreateRoom({ onClose, notify }: { onClose: () => void; notify: (m: string) => void }) {
-  const [done, setDone] = useState(false)
-  const [t, setT] = useState('Calculus 101 · Derivatives')
+export function CreateRoom({ onClose, notify, onCreate, go }: {
+  onClose: () => void
+  notify: (m: string) => void
+  onCreate: (d: { title: string; topic: string; when: string }) => Room
+  go: (s: string) => void
+}) {
+  const [created, setCreated] = useState<Room | null>(null)
+  const [t, setT] = useState('')
+  const [topic, setTopic] = useState('')
+  const [date, setDate] = useState('')
+  const [time, setTime] = useState('')
   const [anon, setAnon] = useState(true)
   const [vote, setVote] = useState(true)
   const [close, setClose] = useState(false)
-  const link = 'speakup.app/r/HX7-4K2'
+  const link = created ? `speakup.app/r/${created.code}` : ''
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const day = date ? new Date(`${date}T00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''
+    const when = [day, time].filter(Boolean).join(', ') || 'Today'
+    setCreated(onCreate({ title: t.trim(), topic: topic.trim() || 'No description', when }))
+  }
+  const copy = () => {
+    navigator.clipboard?.writeText(link).catch(() => {})
+    notify('Link copied to clipboard')
+  }
+
   return (
     <Modal onClose={onClose} title="Create room">
       <div className="mb-6 flex items-start justify-between">
-        <h2 className="text-2xl font-semibold">{done ? 'Your room is ready' : 'Create a room'}</h2>
+        <h2 className="text-2xl font-semibold">{created ? 'Your room is ready' : 'Create a room'}</h2>
         <button aria-label="Close" onClick={onClose} className="grid size-11 cursor-pointer place-items-center rounded-xl text-muted hover:bg-surface2"><Icon n="x" /></button>
       </div>
-      {!done ? (
-        <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); setDone(true) }}>
-          <Field label="Room title"><input className={inputCls} value={t} onChange={(e) => setT(e.target.value)} required /></Field>
-          <Field label="Topic / description"><textarea rows={2} className={`${inputCls} py-3`} defaultValue="Chain rule and implicit differentiation" /></Field>
+      {!created ? (
+        <form className="space-y-4" onSubmit={submit}>
+          <Field label="Room title"><input className={inputCls} value={t} onChange={(e) => setT(e.target.value)} placeholder="e.g. Calculus 101 · Derivatives" required /></Field>
+          <Field label="Topic / description"><textarea rows={2} className={`${inputCls} py-3`} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="What is this session about?" /></Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Date (optional)"><input type="date" className={inputCls} /></Field>
-            <Field label="Time (optional)"><input type="time" className={inputCls} /></Field>
+            <Field label="Date (optional)"><input type="date" className={inputCls} value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+            <Field label="Time (optional)"><input type="time" className={inputCls} value={time} onChange={(e) => setTime(e.target.value)} /></Field>
           </div>
           <div className="divide-y divide-line rounded-2xl bg-surface2 px-4">
             <Toggle on={anon} onChange={setAnon} label="Allow anonymous questions" />
@@ -113,14 +129,14 @@ export function CreateRoom({ onClose, notify }: { onClose: () => void; notify: (
             <QR />
             <div className="text-center sm:text-left">
               <p className="text-sm text-muted">Room code</p>
-              <p className="font-display text-3xl font-bold tracking-widest text-primary">HX7-4K2</p>
+              <p className="font-display text-3xl font-bold tracking-widest text-primary">{created.code}</p>
               <p className="mt-2 text-sm text-muted">Students can scan or type the code.</p>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-xl border border-line px-4 py-3"><Icon n="link" className="size-4 text-muted" /><span className="truncate font-medium">{link}</span></div>
           <div className="flex gap-3">
-            <Button className="flex-1" onClick={() => notify('Link copied to clipboard')}><Icon n="copy" />Copy Link</Button>
-            <Button v="secondary" className="flex-1" onClick={onClose}>Open room</Button>
+            <Button className="flex-1" onClick={copy}><Icon n="copy" />Copy Link</Button>
+            <Button v="secondary" className="flex-1" onClick={() => go(`/teacher/room/${created.id}`)}>Open room</Button>
           </div>
         </div>
       )}
@@ -128,12 +144,12 @@ export function CreateRoom({ onClose, notify }: { onClose: () => void; notify: (
   )
 }
 
-export function TeacherRoom({ go, notify, loading }: { go: (s: string) => void; notify: (m: string) => void; loading?: boolean }) {
-  const [qs, setQs] = useState<Q[]>(seedQuestions.map((q) => ({ ...q, mine: false, voted: false })))
+export function TeacherRoom({ go, notify, room, onEnd, loading }: { go: (s: string) => void; notify: (m: string) => void; room: Room; onEnd: () => void; loading?: boolean }) {
+  const [qs, setQs] = useState<Q[]>(room.seeded ? seedQuestions.map((q) => ({ ...q, mine: false, voted: false })) : [])
   const [tab, setTab] = useState<'live' | 'answered' | 'all'>('live')
   const [sort, setSort] = useState('votes')
-  const [cur, setCur] = useState<number | null>(1)
-  const [ended, setEnded] = useState(false)
+  const [cur, setCur] = useState<number | null>(room.seeded && room.live ? 1 : null)
+  const ended = !room.live
   const patch = (id: number, p: Partial<Q>) => setQs((a) => a.map((q) => (q.id === id ? { ...q, ...p } : q)))
   const hidden = new Set<number>()
   let list = qs.filter((q) => !hidden.has(q.id))
@@ -147,16 +163,17 @@ export function TeacherRoom({ go, notify, loading }: { go: (s: string) => void; 
 
   return (
     <div>
+      <button onClick={() => go('/teacher')} className="mb-4 inline-flex min-h-10 cursor-pointer items-center gap-1.5 text-sm font-semibold text-muted hover:text-fg"><Icon n="home" className="size-4" />All rooms</button>
       <div className="mb-6 rounded-3xl border border-line bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3"><h1 className="text-2xl font-semibold">Calculus 101 · Derivatives</h1><Badge k={ended ? 'ended' : 'live'} /></div>
-            <p className="mt-1 text-muted">Chain rule and implicit differentiation</p>
-            <p className="mt-3 inline-flex items-center gap-2 text-sm font-medium"><Icon n="users" className="size-4" />38 participants</p>
+            <div className="flex items-center gap-3"><h1 className="text-2xl font-semibold">{room.title}</h1><Badge k={ended ? 'ended' : 'live'} /></div>
+            <p className="mt-1 text-muted">{room.topic}</p>
+            <p className="mt-3 inline-flex items-center gap-2 text-sm font-medium"><Icon n="users" className="size-4" />{room.students} participants · Code <span className="font-display tracking-widest text-primary">{room.code}</span></p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button v="secondary" size="sm" onClick={() => notify('Link copied to clipboard')}><Icon n="copy" className="size-4" />Copy link</Button>
-            <Button v="danger" size="sm" onClick={() => { setEnded(true); go('summary') }}>End Room</Button>
+            <Button v="secondary" size="sm" onClick={() => { navigator.clipboard?.writeText(`speakup.app/r/${room.code}`).catch(() => {}); notify('Link copied to clipboard') }}><Icon n="copy" className="size-4" />Copy link</Button>
+            {ended ? <Button v="secondary" size="sm" onClick={() => go(`/teacher/summary/${room.id}`)}>View summary</Button> : <Button v="danger" size="sm" onClick={() => { onEnd(); go(`/teacher/summary/${room.id}`) }}>End Room</Button>}
           </div>
         </div>
       </div>
@@ -215,15 +232,19 @@ export function TeacherRoom({ go, notify, loading }: { go: (s: string) => void; 
   )
 }
 
-export function Summary({ notify }: { notify: (m: string) => void }) {
+export function Summary({ notify, room, go }: { notify: (m: string) => void; room: Room; go: (s: string) => void }) {
   const [ans, setAns] = useState<Record<number, string>>({})
-  const answered = seedQuestions.filter((q) => q.status === 'answered')
-  const open = seedQuestions.filter((q) => q.status !== 'answered')
+  const all = room.seeded ? seedQuestions : []
+  const answered = all.filter((q) => q.status === 'answered')
+  const open = all.filter((q) => q.status !== 'answered')
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-        <div><Badge k="ended" /><h1 className="mt-2 text-3xl font-semibold">Session summary</h1><p className="mt-1 text-muted">Calculus 101 · Derivatives · 6 questions, 2 answered</p></div>
-        <Button v="secondary" onClick={() => notify('PDF exported')}><Icon n="pdf" />Export as PDF</Button>
+        <div><Badge k="ended" /><h1 className="mt-2 text-3xl font-semibold">Session summary</h1><p className="mt-1 text-muted">{room.title} · {all.length} questions, {answered.length} answered</p></div>
+        <div className="flex flex-wrap gap-2">
+          <Button v="ghost" onClick={() => go('/teacher')}>Back to rooms</Button>
+          <Button v="secondary" onClick={() => notify('PDF exported')}><Icon n="pdf" />Export as PDF</Button>
+        </div>
       </div>
       <h2 className="mb-3 text-lg font-semibold">Unanswered ({open.length})</h2>
       <div className="space-y-4">
