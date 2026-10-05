@@ -136,7 +136,9 @@ export function Upvote({ count, active, onClick, disabled }: { count: number; ac
 }
 
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div className={`skeleton ${className}`} />
+  return (
+    <div className={`animate-shimmer rounded-[10px] bg-[linear-gradient(90deg,var(--surface-2)_25%,var(--line)_50%,var(--surface-2)_75%)] bg-[length:200%_100%] motion-reduce:animate-none ${className}`} />
+  )
 }
 export const QSkeleton = () => (
   <div className="flex gap-4 rounded-2xl border border-line bg-surface p-5">
@@ -147,7 +149,7 @@ export const QSkeleton = () => (
 
 export function Toast({ msg, kind = 'ok' }: { msg: string; kind?: 'ok' | 'error' }) {
   return (
-    <div role="status" className="rise pointer-events-auto flex items-center gap-3 rounded-2xl bg-fg px-4 py-3 text-sm font-medium text-bg shadow-soft">
+    <div role="status" className="animate-rise motion-reduce:animate-none pointer-events-auto flex items-center gap-3 rounded-2xl bg-fg px-4 py-3 text-sm font-medium text-bg shadow-soft">
       <span className={`grid size-6 place-items-center rounded-full ${kind === 'ok' ? 'bg-ok text-white' : 'bg-bad text-white'}`}>
         <Icon n={kind === 'ok' ? 'check' : 'alert'} className="size-3.5" />
       </span>
@@ -159,7 +161,7 @@ export function Toast({ msg, kind = 'ok' }: { msg: string; kind?: 'ok' | 'error'
 export function Modal({ children, onClose, title }: { children: ReactNode; onClose: () => void; title: string }) {
   return (
     <div className="fixed inset-0 z-40 grid place-items-center overflow-y-auto bg-[#0f0f1a]/60 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div role="dialog" aria-modal aria-label={title} onClick={(e) => e.stopPropagation()} className="rise w-full max-w-lg rounded-3xl border border-line bg-surface p-6 shadow-soft sm:p-8">
+      <div role="dialog" aria-modal aria-label={title} onClick={(e) => e.stopPropagation()} className="animate-rise motion-reduce:animate-none w-full max-w-lg rounded-3xl border border-line bg-surface p-6 shadow-soft sm:p-8">
         {children}
       </div>
     </div>
@@ -209,7 +211,7 @@ export function QuestionCard({ q, onVote, actions, variant = 'teacher', selected
 }) {
   const ring = selected ? 'border-primary ring-2 ring-primary/30' : q.pinned ? 'border-primary/50' : 'border-line'
   return (
-    <article className={`rise rounded-2xl border bg-surface p-5 shadow-soft transition ${ring} ${q.status === 'answered' ? 'opacity-85' : ''}`}>
+    <article className={`animate-rise motion-reduce:animate-none rounded-2xl border bg-surface p-5 shadow-soft transition ${ring} ${q.status === 'answered' ? 'opacity-85' : ''}`}>
       <div className="flex gap-4">
         <Upvote count={q.votes} active={q.voted} onClick={onVote} disabled={q.status === 'answered'} />
         <div className="min-w-0 flex-1">
