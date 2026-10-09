@@ -1,0 +1,92 @@
+classDiagram
+direction LR
+
+class User {
+  +int id
+  +string username
+  +string passwordHash
+  +Role role
+  +string name
+  +string email
+  +Date createdAt
+}
+class Role {
+  <<enumeration>>
+  teacher
+  student
+}
+class Room {
+  +int id
+  +int teacherId
+  +string code
+  +string title
+  +string topic
+  +Date scheduledAt
+  +RoomStatus status
+  +RoomSettings settings
+  +Date createdAt
+  +Date endedAt
+}
+class RoomStatus {
+  <<enumeration>>
+  live
+  ended
+}
+class RoomSettings {
+  <<value object>>
+  +boolean allowAnonymous
+  +boolean enableUpvoting
+  +boolean closeAfterMeeting
+}
+class Participant {
+  +int id
+  +int roomId
+  +int studentId
+  +string nickname
+  +Date joinedAt
+}
+class Question {
+  +int id
+  +int roomId
+  +int participantId
+  +string text
+  +QuestionStatus status
+  +boolean pinned
+  +boolean hidden
+  +int votes
+  +Date askedAt
+}
+class QuestionStatus {
+  <<enumeration>>
+  pending
+  now
+  later
+  answered
+}
+class Upvote {
+  +int id
+  +int questionId
+  +int participantId
+  +Date createdAt
+}
+class Answer {
+  +int id
+  +int questionId
+  +string text
+  +string attachmentUrl
+  +boolean published
+  +Date answeredAt
+}
+
+User --> Role
+Room --> RoomStatus
+Question --> QuestionStatus
+Room *-- RoomSettings : has
+User "1" --> "0..*" Room : teacher creates
+User "1" --> "0..*" Participant : student joins as
+Room "1" *-- "0..*" Participant : has
+Room "1" *-- "0..*" Question : contains
+Participant "1" --> "0..*" Question : asks
+Question "1" *-- "0..*" Upvote : receives
+Participant "1" --> "0..*" Upvote : casts
+Question "1" *-- "0..1" Answer : answered by
